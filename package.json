@@ -1,0 +1,25 @@
+{
+  "name": "command_stats",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^25.6.2",
+    "@types/react": "^19.2.14"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "ink": "^7.0.2",
+    "react": "^19.2.6"
+  },
+  "bin": {
+    "command-stats": "./index.tsx"
+  },
+  "scripts": {
+    "postinstall": "bun ./scripts/install.ts",
+    "uninstall": "bun ./scripts/uninstall.ts"
+  }
+}
