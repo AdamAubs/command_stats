@@ -1,11 +1,5 @@
 # command_stats
 
-Brief progress
-
-- Built XDG-compliant installer and managed shell hook file
-- Migrated storage to `~/.local/state/command-stats/`
-- Added CI workflow to build platform binaries and upload release artifacts
-
 What it installs
 
 - A standalone `command-stats` binary (installed to `~/.local/bin` by the installer)
@@ -16,11 +10,10 @@ What it tracks
 - Records shell commands to `~/.local/state/command-stats/commands.log`
 - Shows today's most-used commands in a compact terminal UI
 
-Install via curl (replace with your repo URL):
+Install via curl:
 
 ```bash
-# Example: replace USER/REPO and vX.Y.Z with your values
-curl -fsSL https://raw.githubusercontent.com/USER/REPO/vX.Y.Z/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/AdamAubs/command_stats/main/install.sh | bash
 ```
 
 Notes:
@@ -48,3 +41,4 @@ rm -f ./command-stats-local ./command-stats-local.sha256
 ```
 
 Replace the placeholder `USER/REPO` and tag `vX.Y.Z` with your GitHub repo and release tag before publishing.
+Once you push a release tag (e.g., `v0.1.0`), update the curl URL to use that tag instead of `main` for stable releases
