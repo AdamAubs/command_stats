@@ -7,15 +7,14 @@ on:
 
 jobs:
   build:
+    continue-on-error: ${{ matrix.continue-on-error || false }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: macos-latest
             arch: arm64
             target: darwin-arm64
-          - os: macos-13
-            arch: x64
-            target: darwin-x64
           - os: ubuntu-latest
             arch: x64
             target: linux-x64
@@ -54,6 +53,7 @@ jobs:
 
   release:
     needs: build
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
