@@ -21,9 +21,7 @@ Notes:
 - The installer downloads the appropriate binary for your platform, verifies a SHA256 checksum, installs to `~/.local/bin`, and runs the shell-setup step.
 - If `~/.local/bin` is not in your `PATH`, the installer will tell you how to add it.
 
-Screenshot
-
-![command-stats screenshot](path/to/screenshot.png)
+![command-stats screenshot](./terminal-ss.png)
 
 Local developer notes
 
