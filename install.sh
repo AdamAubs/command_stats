@@ -8,7 +8,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-REPO="your-github-username/command_stats"
+REPO="AdamAubs/command_stats"
 BIN_DIR="${HOME}/.local/bin"
 INSTALL_MARKER="command-stats-installed"
 
