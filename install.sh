@@ -63,6 +63,25 @@ get_latest_version() {
   fi
 }
 
+# Ensure BIN_DIR is in PATH
+ensure_bin_in_path() {
+  # Detect shell rc file
+  local shell_rc=""
+  if [[ "$SHELL" == *"zsh"* ]]; then
+    shell_rc="$HOME/.zshrc"
+  elif [[ "$SHELL" == *"bash"* ]]; then
+    shell_rc="$HOME/.bashrc"
+  else
+    return 0  # Can't detect shell, skip
+  fi
+  
+  # Check if BIN_DIR is already in PATH line
+  if ! grep -q "export PATH.*$BIN_DIR" "$shell_rc" 2>/dev/null; then
+    echo -e "${YELLOW}Adding $BIN_DIR to PATH in $shell_rc${NC}"
+    echo "export PATH=\"$BIN_DIR:\$PATH\"" >> "$shell_rc"
+  fi
+}
+
 main() {
   echo -e "${YELLOW}Installing command-stats...${NC}"
   
@@ -120,6 +139,9 @@ main() {
   echo "Installing binary to $BIN_DIR..."
   mv "$BINARY_NAME" "$BIN_DIR/command-stats"
   chmod +x "$BIN_DIR/command-stats"
+  
+  # Ensure BIN_DIR is in PATH
+  ensure_bin_in_path
   
   # Verify binary in PATH
   if ! command -v command-stats &> /dev/null; then
