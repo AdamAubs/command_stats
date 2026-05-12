@@ -1,4 +1,3 @@
-import React from "react";
 import { Box, Text, useStdout } from "ink";
 
 type Props = { items: Array<[string, number]> };

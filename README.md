@@ -1,27 +1,50 @@
 # command_stats
 
-## Prerequisites
+Brief progress
 
-Bun:
+- Built XDG-compliant installer and managed shell hook file
+- Migrated storage to `~/.local/state/command-stats/`
+- Added CI workflow to build platform binaries and upload release artifacts
 
-```shell
-curl -fsSL https://bun.sh/install | bash
+What it installs
+
+- A standalone `command-stats` binary (installed to `~/.local/bin` by the installer)
+- A managed shell hook file under the XDG state directory that records commands
+
+What it tracks
+
+- Records shell commands to `~/.local/state/command-stats/commands.log`
+- Shows today's most-used commands in a compact terminal UI
+
+Install via curl (replace with your repo URL):
+
+```bash
+# Example: replace USER/REPO and vX.Y.Z with your values
+curl -fsSL https://raw.githubusercontent.com/USER/REPO/vX.Y.Z/install.sh | bash
 ```
 
-## Setup
+Notes:
 
-To install dependencies:
+- The installer downloads the appropriate binary for your platform, verifies a SHA256 checksum, installs to `~/.local/bin`, and runs the shell-setup step.
+- If `~/.local/bin` is not in your `PATH`, the installer will tell you how to add it.
+
+Screenshot
+
+![command-stats screenshot](path/to/screenshot.png)
+
+Local developer notes
+
+- To build locally (requires Bun):
 
 ```bash
 bun install
+bun build --compile --target bun ./index.tsx --outfile command-stats-local
 ```
 
-When you run `bun install` the package installs dependencies and then runs the interactive installer which will prompt before adding a marked preexec hook to your shell rc (it makes a backup first).
-
-To run:
+- To remove a local build:
 
 ```bash
-bun run index.tsx
+rm -f ./command-stats-local ./command-stats-local.sha256
 ```
 
-This project was created using `bun init` in bun v1.3.13. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+Replace the placeholder `USER/REPO` and tag `vX.Y.Z` with your GitHub repo and release tag before publishing.

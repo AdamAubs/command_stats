@@ -1,0 +1,78 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            arch: arm64
+            target: darwin-arm64
+          - os: macos-13
+            arch: x64
+            target: darwin-x64
+          - os: ubuntu-latest
+            arch: x64
+            target: linux-x64
+          - os: ubuntu-latest
+            arch: arm64
+            target: linux-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build binary
+        run: |
+          bun build --compile --target bun ./index.tsx --outfile command-stats-${{ matrix.target }}
+
+      - name: Create checksum
+        run: |
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum command-stats-${{ matrix.target }} > command-stats-${{ matrix.target }}.sha256
+          else
+            shasum -a 256 command-stats-${{ matrix.target }} > command-stats-${{ matrix.target }}.sha256
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.target }}
+          path: |
+            command-stats-${{ matrix.target }}
+            command-stats-${{ matrix.target }}.sha256
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Flatten artifacts
+        run: |
+          mkdir -p release
+          find dist -type f -exec mv {} release/ \;
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

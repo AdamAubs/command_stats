@@ -3,6 +3,11 @@ import fs from "fs/promises";
 import fsSync from "fs";
 import os from "os";
 import path from "path";
+import readline from "readline";
+
+const args = process.argv.slice(2);
+const yes = args.includes("--yes") || args.includes("-y");
+const dryRun = args.includes("--dry-run") || args.includes("--dryrun");
 
 const home = os.homedir();
 const shellPath = process.env.SHELL || "";
@@ -19,38 +24,96 @@ const candidates =
         ];
 
 const rcFile = candidates.find((p) => fsSync.existsSync(p)) || candidates[0];
+const stateHome =
+  process.env.XDG_STATE_HOME || path.join(home, ".local", "state");
+const configDir = path.join(stateHome, "command-stats");
+const envFile = path.join(configDir, "env");
+const sourceMarker = "command-stats: source hook file";
+
+async function removeRcSourceLine(): Promise<void> {
+  if (!fsSync.existsSync(rcFile)) {
+    console.log(`${rcFile} does not exist; nothing to remove.`);
+    return;
+  }
+
+  const content = await fs.readFile(rcFile, "utf8");
+  if (!content.includes(sourceMarker)) {
+    console.log("No command-stats source line found in", rcFile);
+    return;
+  }
+
+  const lines = content.split("\n");
+  const filtered = lines.filter((line) => !line.includes(sourceMarker));
+  const newContent = filtered.join("\n").trimEnd() + "\n";
+
+  if (dryRun) {
+    console.log(
+      `[dry-run] Would back up rc file to ${rcFile}.command-stats.uninstall.bak`,
+    );
+    console.log(`[dry-run] Would remove source line from ${rcFile}`);
+    return;
+  }
+
+  try {
+    await fs.copyFile(rcFile, rcFile + ".command-stats.uninstall.bak");
+    console.log(`Backup written to ${rcFile}.command-stats.uninstall.bak`);
+  } catch (error: any) {
+    console.warn("Warning: could not write backup:", error?.message ?? error);
+  }
+
+  await fs.writeFile(rcFile, newContent, "utf8");
+  console.log("Removed command-stats source line from", rcFile);
+}
 
 async function main(): Promise<void> {
   try {
-    if (!fsSync.existsSync(rcFile)) {
-      console.log(`${rcFile} does not exist; nothing to remove.`);
+    if (dryRun) {
+      console.log(
+        "[dry-run] Would inspect and remove command-stats source line and config directory",
+      );
+      await removeRcSourceLine();
+      console.log(`[dry-run] Would remove config directory ${configDir}`);
       return;
     }
 
-    const content = await fs.readFile(rcFile, "utf8");
-    const start = content.indexOf("# >>> command-stats start");
-    const end = content.indexOf("# <<< command-stats end");
-    if (start === -1 || end === -1) {
-      console.log("No command-stats block found in", rcFile);
+    await removeRcSourceLine();
+
+    if (yes) {
+      try {
+        await fs.rm(configDir, { recursive: true, force: true });
+        console.log(`Removed ${configDir}`);
+      } catch (error: any) {
+        console.warn(
+          "Warning: could not remove config dir:",
+          error?.message ?? error,
+        );
+      }
       return;
     }
 
-    const before = content.slice(0, start);
-    const after = content.slice(end + "# <<< command-stats end".length);
-    const newContent = before.trimEnd() + "\n\n" + after.trimStart();
-
-    // backup current
-    try {
-      await fs.copyFile(rcFile, rcFile + ".command-stats.uninstall.bak");
-      console.log(`Backup written to ${rcFile}.command-stats.uninstall.bak`);
-    } catch (e: any) {
-      console.warn("Warning: could not write backup:", e?.message ?? e);
-    }
-
-    await fs.writeFile(rcFile, newContent, "utf8");
-    console.log("Removed command-stats block from", rcFile);
-    console.log(
-      "You may restore the original from the .uninstall.bak file if needed.",
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+    rl.question(
+      `Remove command-stats config directory (${configDir})? (y/N) `,
+      async (ans: string) => {
+        rl.close();
+        if (/^y/i.test(ans)) {
+          try {
+            await fs.rm(configDir, { recursive: true, force: true });
+            console.log(`Removed ${configDir}`);
+          } catch (e: any) {
+            console.warn(
+              "Warning: could not remove config dir:",
+              e?.message ?? e,
+            );
+          }
+        }
+        console.log(
+          "You may restore your rc file from the .uninstall.bak file if needed.",
+        );
+      },
     );
   } catch (err: any) {
     console.error("Uninstall failed:", err?.message ?? err);
