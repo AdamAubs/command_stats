@@ -13,13 +13,20 @@ What it tracks
 Install via curl:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AdamAubs/command_stats/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/AdamAubs/command_stats/master/install.sh | bash
 ```
 
 Notes:
 
 - The installer downloads the appropriate binary for your platform, verifies a SHA256 checksum, installs to `~/.local/bin`, and runs the shell-setup step.
-- If `~/.local/bin` is not in your `PATH`, the installer will tell you how to add it.
+
+Simply run:
+
+```shell
+command-stats
+```
+
+to show the commands you've used today
 
 ![command-stats screenshot](./terminal-ss.png)
 
