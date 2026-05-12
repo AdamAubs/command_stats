@@ -33,3 +33,5 @@ const items = Object.entries(counts)
   .sort((a, b) => b[1] - a[1])
   .slice(0, 30);
 render(<App items={items} />);
+process.stdout.write("\x1B[?25h");
+process.stdout.write("\n");
