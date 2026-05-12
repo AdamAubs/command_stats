@@ -1,7 +1,6 @@
 import fs from "fs";
 import path from "path";
 import { render } from "ink";
-import React from "react";
 import App from "./ui";
 
 const home = process.env.HOME || "~";
@@ -9,7 +8,12 @@ const stateHome =
   process.env.XDG_STATE_HOME || path.join(home, ".local", "state");
 const logPath = path.join(stateHome, "command-stats", "commands.log");
 const raw = fs.existsSync(logPath) ? fs.readFileSync(logPath, "utf8") : "";
-const today = new Date().toISOString().slice(0, 10);
+const now = new Date();
+const today = [
+  now.getFullYear(),
+  String(now.getMonth() + 1).padStart(2, "0"),
+  String(now.getDate()).padStart(2, "0"),
+].join("-");
 
 const counts = raw
   .split("\n")
