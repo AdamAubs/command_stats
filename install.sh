@@ -11,6 +11,12 @@ NC='\033[0m' # No Color
 REPO="AdamAubs/command_stats"
 BIN_DIR="${HOME}/.local/bin"
 INSTALL_MARKER="command-stats-installed"
+STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+CONFIG_DIR="$STATE_HOME/command-stats"
+ENV_FILE="$CONFIG_DIR/env"
+LOG_FILE="$CONFIG_DIR/commands.log"
+SOURCE_MARKER="command-stats: source hook file"
+SOURCE_LINE='[ -f "${ENV_FILE}" ] && source "${ENV_FILE}" # command-stats: source hook file'
 
 # Detect OS and architecture
 detect_platform() {
@@ -79,6 +85,54 @@ ensure_bin_in_path() {
   if ! grep -q "export PATH.*$BIN_DIR" "$shell_rc" 2>/dev/null; then
     echo -e "${YELLOW}Adding $BIN_DIR to PATH in $shell_rc${NC}"
     echo "export PATH=\"$BIN_DIR:\$PATH\"" >> "$shell_rc"
+  fi
+}
+
+# Create shell hook files and source line
+setup_shell_hook() {
+  local shell_rc=""
+  local env_content=""
+
+  if [[ "$SHELL" == *"zsh"* ]]; then
+    shell_rc="$HOME/.zshrc"
+    env_content=$(cat <<EOF
+# command-stats hook for zsh
+preexec_functions+=(command_stats_preexec)
+command_stats_preexec() {
+  printf '%s | %s\\n' "\$(date '+%Y-%m-%d %H:%M:%S')" "\$1" >> "$LOG_FILE"
+}
+EOF
+)
+  else
+    shell_rc="$HOME/.bashrc"
+    env_content=$(cat <<EOF
+# command-stats hook for bash
+__command_stats_log() {
+  printf '%s | %s\\n' "\$(date '+%Y-%m-%d %H:%M:%S')" "\$BASH_COMMAND" >> "$LOG_FILE"
+}
+PROMPT_COMMAND="__command_stats_log\${PROMPT_COMMAND:+;\$PROMPT_COMMAND}"
+EOF
+)
+  fi
+
+  mkdir -p "$CONFIG_DIR"
+
+  if [ ! -f "$ENV_FILE" ]; then
+    printf '%s\n' "$env_content" > "$ENV_FILE"
+    echo "Wrote hook file to $ENV_FILE"
+  fi
+
+  if [ ! -f "$LOG_FILE" ]; then
+    : > "$LOG_FILE"
+  fi
+
+  if [ ! -f "$shell_rc" ]; then
+    touch "$shell_rc"
+  fi
+
+  if ! grep -q "$SOURCE_MARKER" "$shell_rc" 2>/dev/null; then
+    printf '\n%s\n' "[ -f \"$ENV_FILE\" ] && source \"$ENV_FILE\" # $SOURCE_MARKER" >> "$shell_rc"
+    echo "Appended hook source line to $shell_rc"
   fi
 }
 
@@ -155,16 +209,7 @@ main() {
   
   # Run shell setup
   echo -e "${YELLOW}Setting up shell hook...${NC}"
-  if command -v bun &> /dev/null; then
-    # If bun is available, use it to run the install script
-    bun ./scripts/install.ts --yes 2>/dev/null || {
-      echo -e "${YELLOW}Shell setup via install script failed. You can run it manually:${NC}"
-      echo "bun ./scripts/install.ts --yes"
-    }
-  else
-    echo -e "${YELLOW}Bun not found. Run shell setup manually:${NC}"
-    echo "cd $(pwd) && bun ./scripts/install.ts --yes"
-  fi
+  setup_shell_hook
   
   echo -e "${GREEN}Installation complete!${NC}"
   echo "Run 'command-stats' to see today's command statistics."
